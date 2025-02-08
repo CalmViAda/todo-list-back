@@ -1,0 +1,19 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="TodoappApplication" type="Application" factoryName="Application" nameIsGenerated="true">
+    <envs>
+      <env name="SPRING_DATASOURCE_H2_PASSWORD" value="user" />
+      <env name="SPRING_DATASOURCE_H2_USERNAME" value="admin" />
+    </envs>
+    <option name="MAIN_CLASS_NAME" value="com.natixis.todoapp.TodoappApplication" />
+    <module name="todoapp" />
+    <extension name="coverage">
+      <pattern>
+        <option name="PATTERN" value="com.natixis.todoapp.*" />
+        <option name="ENABLED" value="true" />
+      </pattern>
+    </extension>
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>
