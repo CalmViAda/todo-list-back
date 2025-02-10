@@ -1,6 +1,7 @@
 package com.natixis.todoapp.domain;
 
 import com.natixis.todoapp.domain.exception.BadRequest;
+import com.natixis.todoapp.domain.exception.InvalidFilter;
 import com.natixis.todoapp.domain.model.Task;
 import com.natixis.todoapp.domain.spi.TaskRepository;
 import com.natixis.todoapp.factory.TaskTestFactory;
@@ -10,6 +11,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -42,4 +45,60 @@ class TaskServiceImplementationTest {
 
         verify(taskRepository, times(1)).save(expectedTask);
     }
+
+    @Test
+    void add_task_should_throw_bad_request_when_label_is_null_or_empty() {
+        Task taskWithNullLabel = TaskTestFactory.createTaskWithNullLabel();
+        Task taskWithEmptyLabel = TaskTestFactory.createTaskWithEmptyLabel();
+
+        assertThrows(BadRequest.class, () -> taskService.addTask(taskWithNullLabel));
+        assertThrows(BadRequest.class, () -> taskService.addTask(taskWithEmptyLabel));
+    }
+
+    @Test
+    void get_tasks_by_filter_should_return_all_tasks_when_filter_is_all() throws InvalidFilter {
+        List<Task> allTasks = TaskTestFactory.createAllTasks();
+        when(taskRepository.findAll()).thenReturn(allTasks);
+
+        List<Task> actualTasks = taskService.getTasksByFilter("all");
+
+        assertNotNull(actualTasks);
+        assertEquals(allTasks.size(), actualTasks.size());
+        verify(taskRepository, times(1)).findAll();
+    }
+
+    @Test
+    void get_tasks_by_filter_should_return_incomplete_tasks_when_filter_is_status() throws InvalidFilter {
+        List<Task> allTasks = TaskTestFactory.createAllTasks();
+        when(taskRepository.findAll()).thenReturn(allTasks);
+
+        List<Task> actualTasks = taskService.getTasksByFilter("status");
+
+        assertNotNull(actualTasks);
+        assertEquals(2, actualTasks.size());
+        assertFalse(actualTasks.get(0).isComplete());
+        verify(taskRepository, times(1)).findAll();
+    }
+
+    @Test
+    void get_tasks_by_filter_should_return_all_tasks_when_filter_is_unknown() throws InvalidFilter {
+        String invalidFilter = "unknownFilter";
+
+        assertThrows(InvalidFilter.class, () -> taskService.getTasksByFilter(invalidFilter));
+
+    }
+
+    @Test
+    void get_tasks_by_filter_should_return_empty_list_when_no_incomplete_tasks() throws InvalidFilter {
+        List<Task> allTasks = TaskTestFactory.createCompletedTasks();
+        when(taskRepository.findAll()).thenReturn(allTasks);
+
+        List<Task> actualTasks = taskService.getTasksByFilter("status");
+
+        assertNotNull(actualTasks);
+        assertTrue(actualTasks.isEmpty());
+        verify(taskRepository, times(1)).findAll();
+    }
+
+
 }

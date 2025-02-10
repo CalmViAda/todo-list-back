@@ -27,7 +27,6 @@ public class Task {
         return label;
     }
 
-
     public boolean isComplete() {
         return complete;
     }
