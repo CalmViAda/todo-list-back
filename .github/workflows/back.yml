@@ -1,0 +1,38 @@
+name: Test & Coverage
+on: push
+
+jobs:
+  test:
+    name: Run Tests & Check Coverage
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: maven
+
+      - name: Run tests with JaCoCo
+        run: mvn clean verify
+
+      - name: Extract test coverage
+        run: |
+          COVERAGE=$(grep -oP '(?<=<counter type="LINE" missed=")[0-9]+(?=" covered=")[0-9]+' target/site/jacoco/jacoco.xml | awk '{missed+=$1} END {print missed}')
+          TOTAL=$(grep -oP '(?<=covered=")[0-9]+' target/site/jacoco/jacoco.xml | awk '{covered+=$1} END {print covered}')
+          PERCENTAGE=$(( 100 * TOTAL / (TOTAL + COVERAGE) ))
+          echo "Test Coverage: $PERCENTAGE%"
+          echo "COVERAGE=$PERCENTAGE" >> $GITHUB_ENV
+
+      - name: Fail if coverage < 80%
+        run: |
+          if [ "$COVERAGE" -lt 80 ]; then
+            echo "❌ Coverage is below 80% ($COVERAGE%)"
+            exit 1
+          else
+            echo "✅ Coverage is sufficient ($COVERAGE%)"
+          fi
