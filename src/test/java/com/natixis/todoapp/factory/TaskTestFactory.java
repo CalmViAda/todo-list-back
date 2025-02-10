@@ -15,6 +15,14 @@ public class TaskTestFactory {
         );
     }
 
+    public static Task createTaskWithId(UUID id) {
+        return new Task(
+                id,
+                "Finir l'application back",
+                false
+        );
+    }
+
     public static Task createTaskCompleted() {
         return new Task(
                 UUID.fromString("4fa85f64-5717-4562-b3fc-2c963f66afa6"),

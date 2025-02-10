@@ -7,6 +7,7 @@ import com.natixis.todoapp.adapters.apiweb.mapper.TaskDTOMapper;
 import com.natixis.todoapp.domain.api.TaskUseCase;
 import com.natixis.todoapp.domain.exception.BadRequest;
 import com.natixis.todoapp.domain.exception.InvalidFilter;
+import com.natixis.todoapp.domain.exception.TaskNotFound;
 import com.natixis.todoapp.domain.model.Task;
 import com.natixis.todoapp.factory.TaskRequestTestFactory;
 import com.natixis.todoapp.factory.TaskResponseTestFactory;
@@ -22,6 +23,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.List;
+import java.util.UUID;
 
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -170,4 +172,47 @@ class TaskControllerTest {
                 .andExpect(jsonPath("$.errors[0]").value("Unexpected error"));
         verify(taskUseCase, times(1)).getTasksByFilter("all");
     }
+
+    @Test
+    void get_task_by_id_should_return_task_response_when_task_exists() throws Exception {
+        Task expectedTask = TaskTestFactory.createTask();
+        TaskResponse expectedTaskResponse = TaskResponseTestFactory.createTaskResponse();
+        when(taskUseCase.getTaskById(expectedTask.getId())).thenReturn(expectedTask);
+
+        mockMvc.perform(get("/api/task/{id}", expectedTask.getId().toString())
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(expectedTaskResponse.id().toString()))
+                .andExpect(jsonPath("$.label").value(expectedTaskResponse.label()))
+                .andExpect(jsonPath("$.complete").value(expectedTaskResponse.complete()));
+        verify(taskUseCase, times(1)).getTaskById(expectedTask.getId());
+    }
+
+    @Test
+    void get_task_by_id_should_return_not_found_when_task_does_not_exist() throws Exception {
+        UUID nonExistentId = UUID.randomUUID();
+        when(taskUseCase.getTaskById(nonExistentId)).thenThrow(new TaskNotFound(nonExistentId));
+
+        mockMvc.perform(get("/api/task/{id}", nonExistentId.toString())
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.errors[0]").value("No Task found for: "+nonExistentId));
+        verify(taskUseCase, times(1)).getTaskById(nonExistentId);
+    }
+
+    @Test
+    void get_task_by_id_should_return_internal_server_error_when_exception_occurs() throws Exception {
+        UUID validId = UUID.randomUUID();
+        when(taskUseCase.getTaskById(validId)).thenThrow(new RuntimeException("Unexpected error"));
+
+        mockMvc.perform(get("/api/task/{id}", validId)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.errors[0]").value("Unexpected error"));
+        verify(taskUseCase, times(1)).getTaskById(validId);
+    }
+
 }

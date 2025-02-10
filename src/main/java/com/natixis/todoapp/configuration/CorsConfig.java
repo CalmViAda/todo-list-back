@@ -1,4 +1,4 @@
-package com.natixis.todoapp.adapters.apiweb.configuration;
+package com.natixis.todoapp.configuration;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
