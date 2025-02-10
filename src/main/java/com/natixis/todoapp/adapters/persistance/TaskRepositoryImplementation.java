@@ -8,6 +8,8 @@ import com.natixis.todoapp.domain.spi.TaskRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Repository
@@ -30,5 +32,10 @@ public class TaskRepositoryImplementation implements TaskRepository {
         return taskJpaRepository.findAll().stream()
                 .map(TaskEntityMapper::toDomain)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public Optional<Task> findById(UUID id) {
+        return taskJpaRepository.findById(id.toString()).map(TaskEntityMapper::toDomain);
     }
 }

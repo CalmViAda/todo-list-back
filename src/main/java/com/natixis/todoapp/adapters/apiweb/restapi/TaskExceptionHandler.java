@@ -3,6 +3,7 @@ package com.natixis.todoapp.adapters.apiweb.restapi;
 import com.natixis.todoapp.adapters.apiweb.dto.ApiError;
 import com.natixis.todoapp.domain.exception.BadRequest;
 import com.natixis.todoapp.domain.exception.InvalidFilter;
+import com.natixis.todoapp.domain.exception.TaskNotFound;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -32,6 +33,13 @@ public class TaskExceptionHandler {
     @ExceptionHandler(InvalidFilter.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public final ApiError handleInvalidFilter(InvalidFilter exception) {
+        List<String> errors = Collections.singletonList(exception.getMessage());
+        return new ApiError(errors);
+    }
+
+    @ExceptionHandler(TaskNotFound.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public final ApiError handleTaskNotFound(TaskNotFound exception) {
         List<String> errors = Collections.singletonList(exception.getMessage());
         return new ApiError(errors);
     }

@@ -2,6 +2,8 @@ package com.natixis.todoapp.factory;
 
 import com.natixis.todoapp.adapters.persistance.entity.TaskEntity;
 
+import java.util.UUID;
+
 public class TaskEntityTestFactory {
     public static TaskEntity createTaskEntity() {
         return new TaskEntity(
@@ -25,4 +27,11 @@ public class TaskEntityTestFactory {
                 false
         );
     }
+
+    public static TaskEntity createTaskEntityWithId(String taskId) {
+        return new TaskEntity(
+                taskId,
+                "Partir en vacances",
+                false
+        );    }
 }

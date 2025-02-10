@@ -14,6 +14,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -60,7 +61,7 @@ class TaskRepositoryImplementationTest {
     }
 
     @Test
-    void findAll_should_return_list_of_tasks_when_jpa_returns_entities() {
+    void find_all_should_return_list_of_tasks_when_jpa_returns_entities() {
         List<TaskEntity> taskEntities = List.of(
                 TaskEntityTestFactory.createTaskEntity(),
                 TaskEntityTestFactory.createTaskEntityCompleted(),
@@ -81,7 +82,7 @@ class TaskRepositoryImplementationTest {
     }
 
     @Test
-    void findAll_should_return_empty_list_when_jpa_returns_empty() {
+    void find_all_should_return_empty_list_when_jpa_returns_empty() {
         when(taskJpaRepository.findAll()).thenReturn(List.of());
 
         List<Task> actualTasks = taskRepository.findAll();
@@ -91,7 +92,7 @@ class TaskRepositoryImplementationTest {
     }
 
     @Test
-    void findAll_should_throw_exception_when_jpa_fails() {
+    void find_all_should_throw_exception_when_jpa_fails() {
         when(taskJpaRepository.findAll()).thenThrow(new RuntimeException("Database error"));
 
         RuntimeException exception = assertThrows(RuntimeException.class, () -> {
@@ -101,4 +102,45 @@ class TaskRepositoryImplementationTest {
         assertEquals("Database error", exception.getMessage());
         verify(taskJpaRepository, times(1)).findAll();
     }
+
+    @Test
+    void find_by_id_should_return_task_when_task_exists() {
+        String taskId = UUID.randomUUID().toString();
+        TaskEntity taskEntity = TaskEntityTestFactory.createTaskEntityWithId(taskId);
+        Task expectedTask = TaskEntityMapper.toDomain(taskEntity);
+        when(taskJpaRepository.findById(taskId)).thenReturn(Optional.of(taskEntity));
+
+        Optional<Task> actualTask = taskRepository.findById(UUID.fromString(taskId));
+
+        assertTrue(actualTask.isPresent());
+        assertEquals(expectedTask.getId(), actualTask.get().getId());
+        assertEquals(expectedTask.getLabel(), actualTask.get().getLabel());
+        assertEquals(expectedTask.isComplete(), actualTask.get().isComplete());
+        verify(taskJpaRepository, times(1)).findById(taskId);
+    }
+
+    @Test
+    void find_by_id_should_return_empty_when_task_does_not_exist() {
+        String nonExistentId = UUID.randomUUID().toString();
+        when(taskJpaRepository.findById(nonExistentId)).thenReturn(Optional.empty());
+
+        Optional<Task> actualTask = taskRepository.findById(UUID.fromString(nonExistentId));
+
+        assertTrue(actualTask.isEmpty());
+        verify(taskJpaRepository, times(1)).findById(nonExistentId);
+    }
+
+    @Test
+    void find_by_id_should_throw_exception_when_jpa_fails() {
+        String taskId = UUID.randomUUID().toString();
+        when(taskJpaRepository.findById(taskId)).thenThrow(new RuntimeException("Database error"));
+
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            taskRepository.findById(UUID.fromString(taskId));
+        });
+
+        assertEquals("Database error", exception.getMessage());
+        verify(taskJpaRepository, times(1)).findById(taskId);
+    }
+
 }

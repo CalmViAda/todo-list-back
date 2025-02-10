@@ -6,12 +6,14 @@ import com.natixis.todoapp.adapters.apiweb.mapper.TaskDTOMapper;
 import com.natixis.todoapp.domain.api.TaskUseCase;
 import com.natixis.todoapp.domain.exception.BadRequest;
 import com.natixis.todoapp.domain.exception.InvalidFilter;
+import com.natixis.todoapp.domain.exception.TaskNotFound;
 import com.natixis.todoapp.domain.model.Task;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @RestController
@@ -38,6 +40,13 @@ public class TaskController {
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(taskResponses);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<TaskResponse> getTaskById(@PathVariable String id) throws TaskNotFound {
+        Task task = taskUseCase.getTaskById(UUID.fromString(id));
+        TaskResponse taskResponse = TaskDTOMapper.toResponse(task);
+        return ResponseEntity.ok(taskResponse);
     }
 
 }

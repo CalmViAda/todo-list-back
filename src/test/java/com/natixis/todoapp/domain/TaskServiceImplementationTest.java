@@ -2,6 +2,7 @@ package com.natixis.todoapp.domain;
 
 import com.natixis.todoapp.domain.exception.BadRequest;
 import com.natixis.todoapp.domain.exception.InvalidFilter;
+import com.natixis.todoapp.domain.exception.TaskNotFound;
 import com.natixis.todoapp.domain.model.Task;
 import com.natixis.todoapp.domain.spi.TaskRepository;
 import com.natixis.todoapp.factory.TaskTestFactory;
@@ -10,9 +11,8 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-
-import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -85,7 +85,6 @@ class TaskServiceImplementationTest {
         String invalidFilter = "unknownFilter";
 
         assertThrows(InvalidFilter.class, () -> taskService.getTasksByFilter(invalidFilter));
-
     }
 
     @Test
@@ -99,6 +98,31 @@ class TaskServiceImplementationTest {
         assertTrue(actualTasks.isEmpty());
         verify(taskRepository, times(1)).findAll();
     }
+
+    @Test
+    void get_task_by_id_should_return_task_when_task_exists() throws TaskNotFound {
+        UUID taskId = UUID.randomUUID();
+        Task expectedTask = TaskTestFactory.createTaskWithId(taskId);
+        when(taskRepository.findById(taskId)).thenReturn(Optional.of(expectedTask));
+
+        Task actualTask = taskService.getTaskById(taskId);
+
+        assertNotNull(actualTask);
+        assertEquals(expectedTask.getId(), actualTask.getId());
+        assertEquals(expectedTask.getLabel(), actualTask.getLabel());
+        assertEquals(expectedTask.isComplete(), actualTask.isComplete());
+        verify(taskRepository, times(1)).findById(taskId);
+    }
+
+    @Test
+    void get_task_by_id_should_throw_task_not_found_when_task_does_not_exist() {
+        UUID nonExistentId = UUID.randomUUID();
+        when(taskRepository.findById(nonExistentId)).thenReturn(Optional.empty());
+
+        assertThrows(TaskNotFound.class, () -> taskService.getTaskById(nonExistentId));
+        verify(taskRepository, times(1)).findById(nonExistentId);
+    }
+
 
 
 }
