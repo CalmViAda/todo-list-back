@@ -123,6 +123,33 @@ class TaskServiceImplementationTest {
         verify(taskRepository, times(1)).findById(nonExistentId);
     }
 
+    @Test
+    void update_task_status_should_update_status_when_task_exists() throws TaskNotFound {
+        UUID taskId = UUID.randomUUID();
+        Task existingTask = TaskTestFactory.createTaskWithId(taskId);
+        Task updatedTask = new Task(taskId, existingTask.getLabel(), true);
 
+        when(taskRepository.findById(taskId)).thenReturn(Optional.of(existingTask));
+        when(taskRepository.save(any(Task.class))).thenReturn(updatedTask);
+
+        Task result = taskService.updateTaskStatus(taskId, true);
+
+        assertNotNull(result);
+        assertTrue(result.isComplete());
+        verify(taskRepository, times(1)).findById(taskId);
+        verify(taskRepository, times(1)).save(any(Task.class));
+    }
+
+    @Test
+    void update_task_status_should_throw_TaskNotFound_when_task_does_not_exist() {
+        UUID taskId = UUID.randomUUID();
+
+        when(taskRepository.findById(taskId)).thenReturn(Optional.empty());
+
+        assertThrows(TaskNotFound.class, () -> taskService.updateTaskStatus(taskId, true));
+
+        verify(taskRepository, times(1)).findById(taskId);
+        verify(taskRepository, never()).save(any(Task.class));
+    }
 
 }

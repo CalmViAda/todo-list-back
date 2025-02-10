@@ -12,4 +12,12 @@ public class TaskResponseTestFactory {
                 false
         );
     }
+
+    public static TaskResponse createTaskResponseWithStatus(boolean complete) {
+        return new TaskResponse(
+                UUID.fromString("3fa85f64-5717-4562-b3fc-2c963f66afa6"),
+                "Finir l'application back",
+                complete
+        );
+    }
 }

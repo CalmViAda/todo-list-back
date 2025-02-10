@@ -49,4 +49,15 @@ public class TaskController {
         return ResponseEntity.ok(taskResponse);
     }
 
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<TaskResponse> updateTaskStatus(
+            @PathVariable String id,
+            @RequestParam boolean complete) throws TaskNotFound {
+
+        Task updatedTask = taskUseCase.updateTaskStatus(UUID.fromString(id), complete);
+        TaskResponse response = TaskDTOMapper.toResponse(updatedTask);
+        return ResponseEntity.ok(response);
+    }
+
+
 }

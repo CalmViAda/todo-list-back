@@ -29,7 +29,7 @@ class TaskFilterStrategyTest {
     }
 
     @Test
-    void fromString_should_return_all_when_filter_is_all() {
+    void from_string_should_return_all_when_filter_is_all() {
         TaskFilterStrategy result = TaskFilterStrategy.fromString("ALL");
 
         assertNotNull(result);
@@ -37,7 +37,7 @@ class TaskFilterStrategyTest {
     }
 
     @Test
-    void fromString_should_return_status_when_filter_is_status() {
+    void from_string_should_return_status_when_filter_is_status() {
         TaskFilterStrategy result = TaskFilterStrategy.fromString("STATUS");
 
         assertNotNull(result);
@@ -45,7 +45,7 @@ class TaskFilterStrategyTest {
     }
 
     @Test
-    void fromString_should_return_null_when_filter_is_invalid() {
+    void from_string_should_return_null_when_filter_is_invalid() {
         TaskFilterStrategy result = TaskFilterStrategy.fromString("INVALID");
 
         assertNull(result);
