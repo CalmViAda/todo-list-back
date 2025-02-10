@@ -3,8 +3,10 @@ package com.natixis.todoapp.adapters.apiweb.restapi;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.natixis.todoapp.adapters.apiweb.dto.TaskRequest;
 import com.natixis.todoapp.adapters.apiweb.dto.TaskResponse;
+import com.natixis.todoapp.adapters.apiweb.mapper.TaskDTOMapper;
 import com.natixis.todoapp.domain.api.TaskUseCase;
 import com.natixis.todoapp.domain.exception.BadRequest;
+import com.natixis.todoapp.domain.exception.InvalidFilter;
 import com.natixis.todoapp.domain.model.Task;
 import com.natixis.todoapp.factory.TaskRequestTestFactory;
 import com.natixis.todoapp.factory.TaskResponseTestFactory;
@@ -18,6 +20,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+
+import java.util.List;
 
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -88,5 +92,82 @@ class TaskControllerTest {
                 .andExpect(status().isInternalServerError())
                 .andExpect(jsonPath("$.errors[0]").value("Database Error!"));
         verify(taskUseCase, times(1)).addTask(any(Task.class));
+    }
+
+    @Test
+    void get_tasks_should_return_all_tasks_when_filter_is_all() throws Exception {
+        List<Task> tasks = List.of(
+                TaskTestFactory.createTask(),
+                TaskTestFactory.createTaskCompleted(),
+                TaskTestFactory.createTaskUncompleted()
+        );
+
+        List<TaskResponse> expectedResponses = tasks.stream()
+                .map(TaskDTOMapper::toResponse)
+                .toList();
+
+        when(taskUseCase.getTasksByFilter("all")).thenReturn(tasks);
+
+        mockMvc.perform(get("/api/task")
+                        .param("filter", "all")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(expectedResponses.size()))
+                .andExpect(jsonPath("$[0].id").value(expectedResponses.get(0).id().toString()))
+                .andExpect(jsonPath("$[0].label").value(expectedResponses.get(0).label()))
+                .andExpect(jsonPath("$[0].complete").value(expectedResponses.get(0).complete()));
+        verify(taskUseCase, times(1)).getTasksByFilter("all");
+    }
+
+    @Test
+    void get_tasks_should_return_only_incomplete_tasks_when_filter_is_status() throws Exception {
+        List<Task> incompleteTasks = List.of(
+                TaskTestFactory.createTask(),
+                TaskTestFactory.createTaskUncompleted()
+        );
+
+        List<TaskResponse> expectedResponses = incompleteTasks.stream()
+                .map(TaskDTOMapper::toResponse)
+                .toList();
+
+        when(taskUseCase.getTasksByFilter("status")).thenReturn(incompleteTasks);
+
+        mockMvc.perform(get("/api/task")
+                        .param("filter", "status")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(expectedResponses.size()))
+                .andExpect(jsonPath("$[0].id").value(expectedResponses.get(0).id().toString()))
+                .andExpect(jsonPath("$[0].label").value(expectedResponses.get(0).label()))
+                .andExpect(jsonPath("$[0].complete").value(expectedResponses.get(0).complete()));
+        verify(taskUseCase, times(1)).getTasksByFilter("status");
+    }
+
+    @Test
+    void get_tasks_should_return_bad_request_error_when_invalid_filter_exception_occurs() throws Exception {
+        when(taskUseCase.getTasksByFilter(anyString())).thenThrow(new InvalidFilter("unknown"));
+
+        mockMvc.perform(get("/api/task")
+                        .param("filter", "unknown")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors[0]").value("Invalid filter: unknown"));
+        verify(taskUseCase, times(1)).getTasksByFilter("unknown");
+    }
+
+    @Test
+    void get_tasks_should_return_internal_server_error_when_exception_occurs() throws Exception {
+        when(taskUseCase.getTasksByFilter(anyString())).thenThrow(new RuntimeException("Unexpected error"));
+
+        mockMvc.perform(get("/api/task")
+                        .param("filter", "all")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.errors[0]").value("Unexpected error"));
+        verify(taskUseCase, times(1)).getTasksByFilter("all");
     }
 }

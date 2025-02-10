@@ -5,13 +5,14 @@ import com.natixis.todoapp.adapters.apiweb.dto.TaskResponse;
 import com.natixis.todoapp.adapters.apiweb.mapper.TaskDTOMapper;
 import com.natixis.todoapp.domain.api.TaskUseCase;
 import com.natixis.todoapp.domain.exception.BadRequest;
+import com.natixis.todoapp.domain.exception.InvalidFilter;
 import com.natixis.todoapp.domain.model.Task;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/task")
@@ -27,6 +28,16 @@ public class TaskController {
         Task task = taskUseCase.addTask(TaskDTOMapper.fromRequestToDomain(taskRequest));
         TaskResponse taskResponse = TaskDTOMapper.toResponse(task);
         return new ResponseEntity<>(taskResponse, HttpStatus.OK);
+    }
+
+    @GetMapping
+    public ResponseEntity<List<TaskResponse>> getTasks(@RequestParam(defaultValue = "all") String filter) throws InvalidFilter {
+        List<Task> tasks = taskUseCase.getTasksByFilter(filter);
+        List<TaskResponse> taskResponses = tasks.stream()
+                .map(TaskDTOMapper::toResponse)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(taskResponses);
     }
 
 }

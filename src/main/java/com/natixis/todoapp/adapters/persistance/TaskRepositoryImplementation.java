@@ -7,6 +7,9 @@ import com.natixis.todoapp.domain.model.Task;
 import com.natixis.todoapp.domain.spi.TaskRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Repository
 public class TaskRepositoryImplementation implements TaskRepository {
 
@@ -20,5 +23,12 @@ public class TaskRepositoryImplementation implements TaskRepository {
     public Task save(Task task) {
         TaskEntity savedTaskEntity = taskJpaRepository.save(TaskEntityMapper.toEntity(task));
         return TaskEntityMapper.toDomain(savedTaskEntity);
+    }
+
+    @Override
+    public List<Task> findAll() {
+        return taskJpaRepository.findAll().stream()
+                .map(TaskEntityMapper::toDomain)
+                .collect(Collectors.toList());
     }
 }
