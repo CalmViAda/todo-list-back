@@ -1,0 +1,59 @@
+package com.natixis.todoapp.adapters.persistance;
+
+import com.natixis.todoapp.adapters.persistance.entity.TaskEntity;
+import com.natixis.todoapp.adapters.persistance.jpa.TaskJpaRepository;
+import com.natixis.todoapp.adapters.persistance.mapper.TaskEntityMapper;
+import com.natixis.todoapp.domain.model.Task;
+import com.natixis.todoapp.factory.TaskTestFactory;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentMatchers;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+
+import java.util.UUID;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+class TaskRepositoryImplementationTest {
+    @Mock
+    private TaskJpaRepository taskJpaRepository;
+
+    @InjectMocks
+    private TaskRepositoryImplementation taskRepository;
+
+    @BeforeEach
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
+    }
+
+    @Test
+    void save_should_return_task_when_jpa_save_succeed() {
+        Task expectedTask = TaskTestFactory.createTask();
+        TaskEntity expectedTaskEntity = TaskEntityMapper.toEntity(expectedTask);
+        when(taskJpaRepository.save(any(TaskEntity.class))).thenReturn(expectedTaskEntity);
+
+        Task actualTask = taskRepository.save(expectedTask);
+
+        assertEquals(expectedTask.getId(), actualTask.getId());
+        assertEquals(expectedTask.getLabel(), actualTask.getLabel());
+        assertEquals(expectedTask.isComplete(), actualTask.isComplete());
+        verify(taskJpaRepository, times(1)).save(any(TaskEntity.class));
+    }
+
+
+    @Test
+    void save_should_throw_exception_when_jpa_save_fails() {
+        Task task = TaskTestFactory.createTask();
+        when(taskJpaRepository.save(any(TaskEntity.class))).thenThrow(new RuntimeException("Database error"));
+
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            taskRepository.save(task);
+        });
+
+        assertEquals("Database error", exception.getMessage());
+        verify(taskJpaRepository, times(1)).save(any(TaskEntity.class));
+    }
+}

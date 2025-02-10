@@ -1,0 +1,49 @@
+name: Test & Coverage
+on: push
+
+jobs:
+  test:
+    name: Run Tests & Check Coverage
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: maven
+      - name: Run Maven build and tests
+        run: mvn clean test
+  
+      - name: Run tests with JaCoCo
+        run: mvn clean verify
+
+      - name: Extract test coverage
+        run: |
+          COVERAGE=0
+          TOTAL=0
+          # Extraire les lignes non couvertes (missed)
+          COVERAGE=$(grep -oP '(?<=<counter type="LINE" missed=")[0-9]+' target/site/jacoco/jacoco.xml | awk '{missed+=$1} END {print missed}')
+          # Extraire les lignes couvertes (covered)
+          TOTAL=$(grep -oP '(?<=covered=")[0-9]+' target/site/jacoco/jacoco.xml | awk '{covered+=$1} END {print covered}')
+          # Calcul du pourcentage de couverture
+          if ((TOTAL + COVERAGE == 0)); then
+            PERCENTAGE=0
+          else
+            PERCENTAGE=$(( 100 * TOTAL / (TOTAL + COVERAGE) ))
+          fi
+          echo "Test Coverage: $PERCENTAGE%"
+          echo "COVERAGE=$PERCENTAGE" >> $GITHUB_ENV
+
+      - name: Check if coverage is above threshold (80%)
+        run: |
+          if [ "$COVERAGE" -lt 80 ]; then
+            echo "Coverage is below 80%, failing the build."
+            exit 1
+          else
+            echo "Coverage is above 80%, build passed."
+          fi
