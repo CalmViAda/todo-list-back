@@ -14,4 +14,6 @@ public interface TaskUseCase {
     List<Task> getTasksByFilter(String filter) throws InvalidFilter;
 
     Task getTaskById(UUID id) throws TaskNotFound;
+
+    Task updateTaskStatus(UUID uuid, boolean complete) throws TaskNotFound;
 }

@@ -5,7 +5,7 @@ import java.util.UUID;
 public class Task {
     private final UUID id;
     private final String label;
-    private final boolean complete;
+    private boolean complete;
 
     public Task(UUID id, String label, boolean complete) {
         this.id = id;
@@ -31,4 +31,7 @@ public class Task {
         return complete;
     }
 
+    public void setComplete(boolean complete) {
+        this.complete = complete;
+    }
 }

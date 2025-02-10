@@ -215,4 +215,37 @@ class TaskControllerTest {
         verify(taskUseCase, times(1)).getTaskById(validId);
     }
 
+    @Test
+    void update_task_status_should_return_updated_task() throws Exception {
+        UUID taskId = UUID.randomUUID();
+        TaskResponse expectedResponse = TaskResponseTestFactory.createTaskResponseWithStatus(true);
+
+        when(taskUseCase.updateTaskStatus(taskId, true)).thenReturn(TaskTestFactory.createTaskWithStatus(true));
+
+        mockMvc.perform(patch("/api/task/{id}/status", taskId)
+                        .param("complete", "true")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.complete").value(true));
+
+        verify(taskUseCase, times(1)).updateTaskStatus(taskId, true);
+    }
+
+    @Test
+    void update_task_status_should_return_not_found_when_task_does_not_exist() throws Exception {
+        UUID taskId = UUID.randomUUID();
+
+        when(taskUseCase.updateTaskStatus(taskId, true)).thenThrow(new TaskNotFound(taskId));
+
+        mockMvc.perform(patch("/api/task/{id}/status", taskId)
+                        .param("complete", "true")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isNotFound());
+
+        verify(taskUseCase, times(1)).updateTaskStatus(taskId, true);
+    }
+
+
 }

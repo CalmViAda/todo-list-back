@@ -6,6 +6,7 @@ import com.natixis.todoapp.domain.exception.InvalidFilter;
 import com.natixis.todoapp.domain.exception.TaskNotFound;
 import com.natixis.todoapp.domain.model.Task;
 import com.natixis.todoapp.domain.spi.TaskRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
@@ -23,6 +24,7 @@ public class TaskServiceImplementation implements TaskUseCase {
     }
 
     @Override
+    @Transactional
     public Task addTask(Task task) throws BadRequest {
         if (task.getLabel() == null || task.getLabel().length() == 0) {
             throw new BadRequest();
@@ -44,4 +46,12 @@ public class TaskServiceImplementation implements TaskUseCase {
         return taskRepository.findById(id)
                 .orElseThrow(() -> new TaskNotFound(id));
     }
+
+    @Override
+    @Transactional
+    public Task updateTaskStatus(UUID id, boolean complete) throws TaskNotFound {
+        Task task = taskRepository.findById(id)
+                .orElseThrow(() -> new TaskNotFound(id));
+        task.setComplete(complete);
+        return taskRepository.save(task);    }
 }
