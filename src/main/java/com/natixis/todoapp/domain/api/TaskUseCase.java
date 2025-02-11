@@ -16,4 +16,6 @@ public interface TaskUseCase {
     Task getTaskById(UUID id) throws TaskNotFound;
 
     Task updateTaskStatus(UUID uuid, boolean complete) throws TaskNotFound;
+
+    void deleteTask(UUID uuid) throws TaskNotFound;
 }

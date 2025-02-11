@@ -53,5 +53,15 @@ public class TaskServiceImplementation implements TaskUseCase {
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new TaskNotFound(id));
         task.setComplete(complete);
-        return taskRepository.save(task);    }
+        return taskRepository.save(task);
+    }
+
+    @Override
+    @Transactional
+    public void deleteTask(UUID id) throws TaskNotFound {
+        Task task = taskRepository.findById(id)
+                .orElseThrow(() -> new TaskNotFound(id));
+        taskRepository.delete(task);
+    }
+
 }

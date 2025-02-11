@@ -143,4 +143,28 @@ class TaskRepositoryImplementationTest {
         verify(taskJpaRepository, times(1)).findById(taskId);
     }
 
+    @Test
+    void delete_should_delete_task_when_task_exists() {
+        Task task = TaskTestFactory.createTask();
+
+        doNothing().when(taskJpaRepository).delete(any(TaskEntity.class));
+
+        assertDoesNotThrow(() -> taskRepository.delete(task));
+        verify(taskJpaRepository, times(1)).delete(any(TaskEntity.class));
+    }
+
+    @Test
+    void delete_should_throw_exception_when_jpa_delete_fails() {
+        Task task = TaskTestFactory.createTask();
+
+        doThrow(new RuntimeException("Database error")).when(taskJpaRepository).delete(any(TaskEntity.class));
+
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            taskRepository.delete(task);
+        });
+
+        assertEquals("Database error", exception.getMessage());
+        verify(taskJpaRepository, times(1)).delete(any(TaskEntity.class));
+    }
+
 }
