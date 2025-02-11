@@ -38,4 +38,9 @@ public class TaskRepositoryImplementation implements TaskRepository {
     public Optional<Task> findById(UUID id) {
         return taskJpaRepository.findById(id.toString()).map(TaskEntityMapper::toDomain);
     }
+
+    @Override
+    public void delete(Task task) {
+        taskJpaRepository.delete(TaskEntityMapper.toEntity(task));
+    }
 }

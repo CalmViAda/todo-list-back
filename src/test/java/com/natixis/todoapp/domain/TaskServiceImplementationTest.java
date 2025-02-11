@@ -152,4 +152,30 @@ class TaskServiceImplementationTest {
         verify(taskRepository, never()).save(any(Task.class));
     }
 
+    @Test
+    void delete_task_should_delete_task_when_task_exists() throws TaskNotFound {
+        UUID taskId = UUID.randomUUID();
+        Task existingTask = TaskTestFactory.createTaskWithId(taskId);
+
+        when(taskRepository.findById(taskId)).thenReturn(Optional.of(existingTask));
+        doNothing().when(taskRepository).delete(existingTask);
+
+        assertDoesNotThrow(() -> taskService.deleteTask(taskId));
+
+        verify(taskRepository, times(1)).findById(taskId);
+        verify(taskRepository, times(1)).delete(existingTask);
+    }
+
+    @Test
+    void delete_task_should_throw_TaskNotFound_when_task_does_not_exist() {
+        UUID nonExistentId = UUID.randomUUID();
+
+        when(taskRepository.findById(nonExistentId)).thenReturn(Optional.empty());
+
+        assertThrows(TaskNotFound.class, () -> taskService.deleteTask(nonExistentId));
+
+        verify(taskRepository, times(1)).findById(nonExistentId);
+        verify(taskRepository, never()).delete(any(Task.class));
+    }
+
 }

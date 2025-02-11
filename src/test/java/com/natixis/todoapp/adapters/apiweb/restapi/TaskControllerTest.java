@@ -32,6 +32,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 class TaskControllerTest {
 
+    private final String path = "/api/tasks";
+    private final String pathPatch = path + "/{id}/status";
+    private final String pathGetById = path + "/{id}";
+    private final String pathDelete = path + "/{id}";
+
     @Autowired
     private MockMvc mockMvc;
 
@@ -57,7 +62,7 @@ class TaskControllerTest {
 
         when(taskUseCase.addTask(any(Task.class))).thenReturn(expectedTask);
 
-        mockMvc.perform(post("/api/task")
+        mockMvc.perform(post(path)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(new ObjectMapper().writeValueAsString(givenTaskRequest)))
                 .andDo(print())
@@ -73,7 +78,7 @@ class TaskControllerTest {
         TaskRequest givenTaskRequest = TaskRequestTestFactory.createBadTaskRequest();
         when(taskUseCase.addTask(any(Task.class))).thenThrow(new BadRequest());
 
-        mockMvc.perform(post("/api/task")
+        mockMvc.perform(post(path)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(new ObjectMapper().writeValueAsString(givenTaskRequest)))
                 .andDo(print())
@@ -87,7 +92,7 @@ class TaskControllerTest {
         TaskRequest givenTaskRequest = TaskRequestTestFactory.createTaskRequest();
         when(taskUseCase.addTask(any(Task.class))).thenThrow(new RuntimeException("Database Error!"));
 
-        mockMvc.perform(post("/api/task")
+        mockMvc.perform(post(path)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(new ObjectMapper().writeValueAsString(givenTaskRequest)))
                 .andDo(print())
@@ -110,7 +115,7 @@ class TaskControllerTest {
 
         when(taskUseCase.getTasksByFilter("all")).thenReturn(tasks);
 
-        mockMvc.perform(get("/api/task")
+        mockMvc.perform(get(path)
                         .param("filter", "all")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andDo(print())
@@ -135,7 +140,7 @@ class TaskControllerTest {
 
         when(taskUseCase.getTasksByFilter("status")).thenReturn(incompleteTasks);
 
-        mockMvc.perform(get("/api/task")
+        mockMvc.perform(get(path)
                         .param("filter", "status")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andDo(print())
@@ -151,7 +156,7 @@ class TaskControllerTest {
     void get_tasks_should_return_bad_request_error_when_invalid_filter_exception_occurs() throws Exception {
         when(taskUseCase.getTasksByFilter(anyString())).thenThrow(new InvalidFilter("unknown"));
 
-        mockMvc.perform(get("/api/task")
+        mockMvc.perform(get(path)
                         .param("filter", "unknown")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andDo(print())
@@ -164,7 +169,7 @@ class TaskControllerTest {
     void get_tasks_should_return_internal_server_error_when_exception_occurs() throws Exception {
         when(taskUseCase.getTasksByFilter(anyString())).thenThrow(new RuntimeException("Unexpected error"));
 
-        mockMvc.perform(get("/api/task")
+        mockMvc.perform(get(path)
                         .param("filter", "all")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andDo(print())
@@ -179,7 +184,7 @@ class TaskControllerTest {
         TaskResponse expectedTaskResponse = TaskResponseTestFactory.createTaskResponse();
         when(taskUseCase.getTaskById(expectedTask.getId())).thenReturn(expectedTask);
 
-        mockMvc.perform(get("/api/task/{id}", expectedTask.getId().toString())
+        mockMvc.perform(get(pathGetById, expectedTask.getId().toString())
                         .contentType(MediaType.APPLICATION_JSON))
                 .andDo(print())
                 .andExpect(status().isOk())
@@ -194,7 +199,7 @@ class TaskControllerTest {
         UUID nonExistentId = UUID.randomUUID();
         when(taskUseCase.getTaskById(nonExistentId)).thenThrow(new TaskNotFound(nonExistentId));
 
-        mockMvc.perform(get("/api/task/{id}", nonExistentId.toString())
+        mockMvc.perform(get(pathGetById, nonExistentId.toString())
                         .contentType(MediaType.APPLICATION_JSON))
                 .andDo(print())
                 .andExpect(status().isNotFound())
@@ -207,7 +212,7 @@ class TaskControllerTest {
         UUID validId = UUID.randomUUID();
         when(taskUseCase.getTaskById(validId)).thenThrow(new RuntimeException("Unexpected error"));
 
-        mockMvc.perform(get("/api/task/{id}", validId)
+        mockMvc.perform(get(pathGetById, validId)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andDo(print())
                 .andExpect(status().isInternalServerError())
@@ -222,7 +227,7 @@ class TaskControllerTest {
 
         when(taskUseCase.updateTaskStatus(taskId, true)).thenReturn(TaskTestFactory.createTaskWithStatus(true));
 
-        mockMvc.perform(patch("/api/task/{id}/status", taskId)
+        mockMvc.perform(patch(pathPatch, taskId)
                         .param("complete", "true")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andDo(print())
@@ -238,7 +243,7 @@ class TaskControllerTest {
 
         when(taskUseCase.updateTaskStatus(taskId, true)).thenThrow(new TaskNotFound(taskId));
 
-        mockMvc.perform(patch("/api/task/{id}/status", taskId)
+        mockMvc.perform(patch(pathPatch, taskId)
                         .param("complete", "true")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andDo(print())
@@ -247,5 +252,32 @@ class TaskControllerTest {
         verify(taskUseCase, times(1)).updateTaskStatus(taskId, true);
     }
 
+    @Test
+    void delete_task_should_return_no_content_when_task_is_deleted() throws Exception {
+        UUID taskId = UUID.randomUUID();
+
+        doNothing().when(taskUseCase).deleteTask(taskId);
+
+        mockMvc.perform(delete(pathDelete, taskId)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isOk());
+        verify(taskUseCase, times(1)).deleteTask(taskId);
+    }
+
+    @Test
+    void delete_task_should_return_not_found_when_task_does_not_exist() throws Exception {
+        UUID taskId = UUID.randomUUID();
+
+        doThrow(new TaskNotFound(taskId)).when(taskUseCase).deleteTask(taskId);
+
+        mockMvc.perform(delete(pathDelete, taskId)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.errors[0]").value("No Task found for: "+taskId));
+
+        verify(taskUseCase, times(1)).deleteTask(taskId);
+    }
 
 }

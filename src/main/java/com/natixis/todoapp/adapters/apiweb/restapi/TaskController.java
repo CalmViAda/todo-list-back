@@ -17,7 +17,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/task")
+@RequestMapping("/api/tasks")
 public class TaskController {
     private final TaskUseCase taskUseCase;
 
@@ -59,5 +59,10 @@ public class TaskController {
         return ResponseEntity.ok(response);
     }
 
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteTask(@PathVariable String id) throws TaskNotFound {
+        taskUseCase.deleteTask(UUID.fromString(id));
+        return ResponseEntity.ok().build();
+    }
 
 }
