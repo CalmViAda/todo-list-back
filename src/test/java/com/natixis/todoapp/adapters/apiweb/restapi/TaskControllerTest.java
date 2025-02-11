@@ -261,7 +261,7 @@ class TaskControllerTest {
         mockMvc.perform(delete(pathDelete, taskId)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andDo(print())
-                .andExpect(status().isOk());
+                .andExpect(status().isNoContent());
         verify(taskUseCase, times(1)).deleteTask(taskId);
     }
 
